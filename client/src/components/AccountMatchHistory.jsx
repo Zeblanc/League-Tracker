@@ -7,6 +7,7 @@ function AccountMatchHistory({ puuid }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  
   useEffect(() => {
     const fetchMatchHistory = async () => {
       setIsLoading(true);
@@ -29,14 +30,14 @@ function AccountMatchHistory({ puuid }) {
   }, [puuid]);
 
   return (
-    <div>
-      <h2>Match History for Puuid: {puuid}</h2>
+    <div className='border'>
+      <h1>Match History for Puuid: {puuid}</h1>
       {isLoading && <p>Loading match history...</p>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {matchHistory.length > 0 ? (
-        <ul>
+        <ul className='list-group list-group-numbered'>
           {matchHistory.map((matchId) => (
-            <li key={matchId}>{matchId}</li>
+            <li className = 'list-group-item' key={matchId}>{matchId}</li>
           ))}
         </ul>
       ) : (

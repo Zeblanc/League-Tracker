@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
@@ -5,8 +6,7 @@ const app = express();
 
 app.use(cors());
 
-// Move the API key to an environment variable or config file in a real application
-const API_KEY = "RGAPI-523c9793-a7cb-4965-aa2e-3e3b830119e7";
+const API_KEY = process.env.RIOT_API_KEY;
 const baseUrl = "https://americas.api.riotgames.com";
 
 async function fetchRiotAccount(gameName, tagLine) {
@@ -24,32 +24,47 @@ async function fetchRiotAccount(gameName, tagLine) {
   }
 }
 
-
 async function getMatchHistoryWithPuuid(puuid, start = 0, count = 5) {
   try {
     const response = await axios.get(
-      `${baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids?${start}&${count}`, {
+      `${baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids?${start}&${count}`,
+      {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
           "Accept-Language": "en-US,en;q=0.9,ja;q=0.8",
           "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Origin": "https://developer.riotgames.com",
-          "X-Riot-Token": API_KEY
+          Origin: "https://developer.riotgames.com",
+          "X-Riot-Token": API_KEY,
         },
         params: {
           puuid: puuid,
           start: start,
-          count: count
-        }
+          count: count,
+        },
       }
-    )
+    );
     return response.data;
-  } catch(error) {
-    console.error("Error fetching the match history:", error.message)
+  } catch (error) {
+    console.error("Error fetching the match history:", error.message);
     throw error;
   }
 }
 
+async function getMatchStats(matchId) {
+  try {
+    const response = await axios.get(
+      `${baseUrl}/lol/match/v5/matches/${matchId}`,
+      {
+        params: { api_key: API_KEY },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error getting match imformation:", error.message);
+    throw error;
+  }
+}
 
 app.get("/api/account/:gameName/:tagLine", async (req, res) => {
   try {
@@ -72,6 +87,18 @@ app.get("/api/matches/:puuid", async (req, res) => {
     res.status(500).send("Error fetching match history");
   }
 });
+
+app.get(`/api/match/matchStats/:matchId`, async (req, res) => {
+  try {
+    const matchId = req.params.matchId;
+    const matchStats = await getMatchStats(matchId);
+    res.json(matchStats); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error getting match information")
+  }
+})
+
 
 app.get("/test-match-history", async (req, res) => {
   try {
