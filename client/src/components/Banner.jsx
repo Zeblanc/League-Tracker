@@ -7,6 +7,7 @@ function Banner() {
       <Link to="/" className="list-group-item list-group-item-action list-group-item-primary">Home</Link>
       <Link to="/leaderboards" className="list-group-item list-group-item-action list-group-item-primary">Leaderboards</Link>
       <Link to="/login" className="list-group-item list-group-item-action list-group-item-primary">Login</Link>
+      <Link to="/account" className="list-group-item list-group-item-action list-group-item-primary">Search</Link>
     </div>
   )
 }
