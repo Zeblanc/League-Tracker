@@ -6,6 +6,7 @@ import Banner from "./components/Banner";
 import Home from './pages/Home';
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
+import MatchStats from "./components/MatchStats";
 
 function App() {
   const [puuid, setPuuid] = useState(null);
@@ -22,6 +23,7 @@ function App() {
             <div className="container text-center">
               <RiotAccount setPuuid={setPuuid} />
               <AccountMatchHistory puuid={puuid} />
+              <MatchStats />
             </div>
           } />
           
