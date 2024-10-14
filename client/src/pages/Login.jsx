@@ -2,7 +2,7 @@
 
 function Login() {
   return (
-    <div>Login</div>
+    <h1 className="container text-center">Login</h1>
   )
 }
 

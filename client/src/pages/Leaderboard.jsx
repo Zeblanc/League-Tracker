@@ -1,6 +1,6 @@
 function Leaderboard() {
   return (
-    <div>This is the Leaderboard</div>
+    <h1 className="container text-center">This is the Leaderboard</h1>
   )
 }
 
