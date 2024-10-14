@@ -57,7 +57,7 @@ function RiotAccount({ setPuuid }) {
           placeholder="Enter Tag Line"
         />
       </div>
-      <button onClick={fetchAccountData} disabled={isLoading}>
+      <button className='btn btn-primary' onClick={fetchAccountData} disabled={isLoading}>
         {isLoading ? 'Loading...' : 'Look up Account'}
       </button>
       {/* if error is true then render */}
