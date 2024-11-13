@@ -2,12 +2,124 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { check, validationResult } = require('express-validator');
+const sequelize = require('./config/database');
+const { Account, Match, MatchParticipant } = require('./models');
+const auth = require('./middleware/auth');
+const { Op } = require('sequelize');
+
 const app = express();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors());
+app.use(express.json());
 
 const API_KEY = process.env.RIOT_API_KEY;
 const baseUrl = "https://americas.api.riotgames.com";
+
+// Authentication Routes
+app.post('/api/register', [
+  check('username', 'Username is required').not().isEmpty(),
+  check('email', 'Please include a valid email').isEmail(),
+  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { username, email, password } = req.body;
+
+  try {
+    let user = await Account.findOne({ 
+      where: {
+        [Op.or]: [
+          { email: email },
+          { username: username }
+        ]
+      }
+    });
+
+    if (user) {
+      return res.status(400).json({ msg: 'User already exists' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user = await Account.create({
+      username,
+      email,
+      password: hashedPassword
+    });
+
+    const payload = {
+      user: {
+        id: user.id
+      }
+    };
+
+    jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token });
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+app.post('/api/login', [
+  check('email', 'Please include a valid email').isEmail(),
+  check('password', 'Password is required').exists()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  try {
+    const user = await Account.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    const payload = {
+      user: {
+        id: user.id
+      }
+    };
+
+    jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token });
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+app.get('/api/user', auth, async (req, res) => {
+  try {
+    const user = await Account.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
 
 async function fetchRiotAccount(gameName, tagLine) {
   try {
@@ -27,7 +139,7 @@ async function fetchRiotAccount(gameName, tagLine) {
 async function getMatchHistoryWithPuuid(puuid, start = 0, count = 5) {
   try {
     const response = await axios.get(
-      `${baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids?${start}&${count}`,
+      `${baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids`,
       {
         headers: {
           "User-Agent":
@@ -38,10 +150,9 @@ async function getMatchHistoryWithPuuid(puuid, start = 0, count = 5) {
           "X-Riot-Token": API_KEY,
         },
         params: {
-          puuid: puuid,
           start: start,
-          count: count,
-        },
+          count: count
+        }
       }
     );
     return response.data;
@@ -53,23 +164,113 @@ async function getMatchHistoryWithPuuid(puuid, start = 0, count = 5) {
 
 async function getMatchStats(matchId) {
   try {
+    // Check if match exists in database
+    const existingMatch = await Match.findByPk(matchId);
+    if (existingMatch) {
+      console.log("Returning cached match data for:", matchId);
+      return existingMatch.matchData;
+    }
+
+    console.log("Fetching new match data for:", matchId);
     const response = await axios.get(
       `${baseUrl}/lol/match/v5/matches/${matchId}`,
       {
-        params: { api_key: API_KEY },
+        headers: {
+          "X-Riot-Token": API_KEY
+        }
       }
     );
-    return response.data;
+
+    const matchData = response.data;
+    
+    try {
+      // Store match data in database
+      await Match.create({
+        matchId: matchId,
+        gameMode: matchData.info.gameMode,
+        gameDuration: matchData.info.gameDuration,
+        gameCreation: new Date(matchData.info.gameCreation),
+        matchData: matchData
+      });
+
+      // Store participant data
+      for (const participant of matchData.info.participants) {
+        await MatchParticipant.create({
+          puuid: participant.puuid,
+          matchId: matchId,
+          championId: participant.championId,
+          kills: participant.kills,
+          deaths: participant.deaths,
+          assists: participant.assists,
+          win: participant.win
+        });
+      }
+    } catch (dbError) {
+      console.error("Error storing match data:", dbError);
+      // Even if storage fails, return the match data
+    }
+
+    return matchData;
   } catch (error) {
-    console.error("Error getting match imformation:", error.message);
-    throw error;
+    console.error("Error in getMatchStats:", error.response?.status, error.response?.data);
+    if (error.response?.status === 404) {
+      throw new Error("Match not found");
+    }
+    throw new Error(error.response?.data?.status?.message || error.message);
   }
 }
+
+app.post("/api/account/link", auth, async (req, res) => {
+  try {
+    const { gameName, tagLine } = req.body;
+    
+    const riotData = await fetchRiotAccount(gameName, tagLine);
+    
+    await Account.update({
+      puuid: riotData.puuid,
+      gameName: riotData.gameName,
+      tagLine: riotData.tagLine,
+      lastUpdated: new Date()
+    }, {
+      where: { id: req.user.id }
+    });
+
+    res.json(riotData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Sorry, an error occurred while linking the account");
+  }
+});
 
 app.get("/api/account/:gameName/:tagLine", async (req, res) => {
   try {
     const { gameName, tagLine } = req.params;
+    
+    const existingAccount = await Account.findOne({
+      where: {
+        gameName: gameName,
+        tagLine: tagLine
+      }
+    });
+
+    if (existingAccount && 
+        (new Date() - new Date(existingAccount.lastUpdated)) < 3600000) {
+      return res.json({
+        puuid: existingAccount.puuid,
+        gameName: existingAccount.gameName,
+        tagLine: existingAccount.tagLine
+      });
+    }
+
     const data = await fetchRiotAccount(gameName, tagLine);
+    
+    await Account.upsert({
+      puuid: data.puuid,
+      gameName: data.gameName,
+      tagLine: data.tagLine,
+      lastUpdated: new Date()
+    });
+
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -80,7 +281,9 @@ app.get("/api/account/:gameName/:tagLine", async (req, res) => {
 app.get("/api/matches/:puuid", async (req, res) => {
   try {
     const puuid = req.params.puuid;
-    const matchHistory = await getMatchHistoryWithPuuid(puuid);
+    const start = parseInt(req.query.start) || 0;
+    const count = parseInt(req.query.count) || 5;
+    const matchHistory = await getMatchHistoryWithPuuid(puuid, start, count);
     res.json(matchHistory);
   } catch (error) {
     console.error(error);
@@ -94,27 +297,21 @@ app.get(`/api/match/matchStats/:matchId`, async (req, res) => {
     const matchStats = await getMatchStats(matchId);
     res.json(matchStats); 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error getting match information")
+    console.error("Error in match stats endpoint:", error);
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-
-app.get("/test-match-history", async (req, res) => {
+// Database initialization and server start
+(async () => {
   try {
-    const testPuuid =
-      "Onpn7wFKYeXQYBW8SXsW_I8-0o6nYG9Jdk_BfC2cvuEA8yrYl6nDmzqILfyaWeHrIH9ZkXgbTSg9Nw";
-    const matchHistory = await getMatchHistoryWithPuuid(testPuuid);
-    res.json(matchHistory);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      error: err.message,
-      details: err.response ? err.response.data : null,
+    await sequelize.sync({ force: false }); // Changed to false to preserve data
+    console.log('Database synchronized successfully');
+    
+    app.listen(8080, () => {
+      console.log("Server is running on localhost 8080");
     });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
   }
-});
-
-app.listen(8080, () => {
-  console.log("Server is running on localhost 8080");
-});
+})();
