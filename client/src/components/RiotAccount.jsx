@@ -50,7 +50,7 @@ function RiotAccount({ setPuuid }) {
         />
       </div>
       <div>
-        <input 
+        <input
           type="text" 
           value={tagLine} 
           onChange={(e) => setTagLine(e.target.value)}

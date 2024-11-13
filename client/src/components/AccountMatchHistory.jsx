@@ -30,7 +30,7 @@ function AccountMatchHistory({ puuid }) {
 
   return (
     <div className='border'>
-      <h1>Match History for Puuid: {puuid}</h1>
+      <p><strong>Match History for Puuid:</strong>{puuid}</p> 
       {isLoading && <p>Loading match history...</p>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {matchHistory.length > 0 ? (
