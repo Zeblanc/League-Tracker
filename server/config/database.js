@@ -8,7 +8,6 @@ const sequelize = new Sequelize({
   database: process.env.DB_NAME || 'league_tracker',
   dialect: 'mysql',
   dialectOptions: {
-    // Explicitly specify MySQL 8 authentication
     authPlugins: {
       mysql_native_password: () => () => Buffer.from(process.env.DB_PASSWORD || '')
     }

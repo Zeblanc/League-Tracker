@@ -4,6 +4,7 @@ import RiotAccount from './components/RiotAccount';
 import AccountMatchHistory from './components/AccountMatchHistory';
 import Banner from './components/Banner';
 import { LoginForm, RegisterForm } from './components/AuthForms';
+import Leaderboard from './pages/Leaderboard';
 import './App.css';
 
 function App() {
@@ -75,7 +76,7 @@ function App() {
   return (
     <Router>
       <div>
-        <Banner />
+        <Banner isLoggedIn={!!token} />
         {!token ? (
           <div className="auth-container">
             <div className="auth-forms">
@@ -104,6 +105,7 @@ function App() {
                   )
                 } 
               />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </>

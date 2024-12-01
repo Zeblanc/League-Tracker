@@ -18,8 +18,62 @@ app.use(express.json());
 
 const API_KEY = process.env.RIOT_API_KEY;
 const baseUrl = "https://americas.api.riotgames.com";
+const regionUrl = "https://na1.api.riotgames.com";
 
-// Authentication Routes
+// Leaderboard endpoint
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    console.log('Fetching challenger league data...');
+    const response = await axios.get(
+      `${regionUrl}/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`,
+      {
+        headers: {
+          "X-Riot-Token": API_KEY,
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Origin": "https://developer.riotgames.com"
+        }
+      }
+    );
+
+    if (!response.data || !response.data.entries) {
+      console.error('Invalid response format:', response.data);
+      return res.status(500).json({ error: 'Invalid response from Riot API' });
+    }
+
+    console.log('Received challenger data with entries:', response.data.entries.length);
+
+    const topPlayers = response.data.entries
+      .sort((a, b) => b.leaguePoints - a.leaguePoints)
+      .slice(0, 100)
+      .map((entry, index) => {
+        console.log('Processing entry:', entry);
+        return {
+          rank: index + 1,
+          summonerName: entry.summonerName,
+          leaguePoints: entry.leaguePoints,
+          wins: entry.wins,
+          losses: entry.losses,
+          winRate: ((entry.wins / (entry.wins + entry.losses)) * 100).toFixed(1)
+        };
+      });
+
+    console.log('Sending processed data:', topPlayers.slice(0, 3)); // Log first 3 entries
+    res.json(topPlayers);
+  } catch (error) {
+    console.error("Error fetching leaderboard:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    res.status(500).json({ 
+      error: 'Error fetching leaderboard data',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+
 app.post('/api/register', [
   check('username', 'Username is required').not().isEmpty(),
   check('email', 'Please include a valid email').isEmail(),
