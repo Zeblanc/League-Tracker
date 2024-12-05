@@ -7,6 +7,7 @@ function Banner({ theme, onToggleTheme }) {
       <div className="list-group list-group-horizontal">
         <Link to="/" className="list-group-item list-group-item-action list-group-item-primary">Home</Link>
         <Link to="/leaderboard" className="list-group-item list-group-item-action list-group-item-primary">Leaderboard</Link>
+        <Link to="/search" className="list-group-item list-group-item-action list-group-item-primary">Search</Link>
       </div>
       <button 
         className="theme-toggle" 
