@@ -11,7 +11,7 @@ const LeaderboardEntry = sequelize.define('LeaderboardEntry', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  leaguePoints: {
+  lp: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
@@ -23,6 +23,10 @@ const LeaderboardEntry = sequelize.define('LeaderboardEntry', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  winrate: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  }
 });
 
 module.exports = LeaderboardEntry;

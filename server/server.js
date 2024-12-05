@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const sequelize = require('./config/database');
-const { Account, Match, MatchParticipant } = require('./models');
+const { Account, Match, MatchParticipant, LeaderboardEntry } = require('./models');
 const auth = require('./middleware/auth');
 const { Op } = require('sequelize');
 
@@ -141,7 +141,7 @@ app.get('/api/leaderboard', async (req, res) => {
     .map((entry, index) => {
       console.log("Entry: ", entry);
       return {
-        rank: index + 1,
+        rank: String(index + 1),
         summonerId: entry.summonerId,
         lp: entry.leaguePoints,
         wins: entry.wins,
@@ -150,6 +150,11 @@ app.get('/api/leaderboard', async (req, res) => {
       }
     });
 
+    await LeaderboardEntry.bulkCreate(challengers, {
+      updateOnDuplicate: ['rank', 'summonerId', 'lp', 'wins', 'losses', 'winrate']
+    });
+
+    res.json(challengers)
     // const enrichedChallengers = await Promise.all(
     //   challengers.map(async (entry, index) => {
     //     const summonerData = await fetchPuuidWithSummonerId(entry.summonerId)
@@ -167,11 +172,12 @@ app.get('/api/leaderboard', async (req, res) => {
     //     }
     //   })
     // )
-    res.json(challengers)
+    
   } catch(err) {
     console.error('Error Fetching leaderboard data', err);
   }
 })
+
 
 
 app.post('/api/register', [

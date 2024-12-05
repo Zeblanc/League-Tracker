@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 
+
 function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +66,7 @@ function Leaderboard() {
           <thead className="table-dark">
             <tr>
               <th scope="col">Rank</th>
-              <th scope="col">Summoner Name</th>
+              <th scope="col">Summoner ID</th>
               <th scope="col">LP</th>
               <th scope="col">Wins</th>
               <th scope="col">Losses</th>
@@ -77,10 +78,10 @@ function Leaderboard() {
               <tr key={player.summonerName}>
                 <td>{player.rank}</td>
                 <td>{player.summonerId}</td>
-                <td>{player.leaguePoints}</td>
+                <td>{player.lp}</td>
                 <td>{player.wins}</td>
                 <td>{player.losses}</td>
-                <td>{player.winRate}%</td>
+                <td>{player.winrate}%</td>
               </tr>
             ))}
           </tbody>
