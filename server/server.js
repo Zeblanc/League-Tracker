@@ -118,6 +118,7 @@ app.get('/api/getGameNameAndTagline/:summonerId', async (req, res) => {
   }
 });
 
+
 app.get('/api/leaderboard', async (req, res) => {
   try {
     console.log('Fetching Leaderboard Data...');
@@ -136,38 +137,37 @@ app.get('/api/leaderboard', async (req, res) => {
 
     const challengers = response.data.entries
     .sort((a, b) => b.leaguePoints - a.leaguePoints)
-    .slice(0, 100);
+    .slice(0, 100)
+    .map((entry, index) => {
+      console.log("Entry: ", entry);
+      return {
+        rank: index + 1,
+        summonerId: entry.summonerId,
+        lp: entry.leaguePoints,
+        wins: entry.wins,
+        losses: entry.losses,
+        winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
+      }
+    });
 
-    const enrichedChallengers = await Promise.all(
-      challengers.map(async (entry, index) => {
-        const summonerData = await fetchPuuidWithSummonerId(entry.summonerId)
-        const accountData = await fetchGameNameAndTaglineWithPuuid(summonerData)
+    // const enrichedChallengers = await Promise.all(
+    //   challengers.map(async (entry, index) => {
+    //     const summonerData = await fetchPuuidWithSummonerId(entry.summonerId)
+    //     const accountData = await fetchGameNameAndTaglineWithPuuid(summonerData)
 
-        return {
-          rank: index + 1,
-          summonerId: entry.summonerId,
-          gameName: accountData.gameName,
-          tagLine: accountData.tagLine,
-          lp: entry.leaguePoints,
-          wins: entry.wins,
-          losses: entry.losses,
-          winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
-        }
-      })
-    )
-  //   .map((entry, index) => {
-  //     console.log("Entry: ", entry);
-  //     return {
-  //       rank: index + 1,
-  //       summonerId: entry.summonerId,
-  //       lp: entry.leaguePoints,
-  //       wins: entry.wins,
-  //       losses: entry.losses,
-  //       winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
-  //     }
-  //   })
-
-  //   res.json(challengers)
+    //     return {
+    //       rank: index + 1,
+    //       summonerId: entry.summonerId,
+    //       gameName: accountData.gameName,
+    //       tagLine: accountData.tagLine,
+    //       lp: entry.leaguePoints,
+    //       wins: entry.wins,
+    //       losses: entry.losses,
+    //       winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
+    //     }
+    //   })
+    // )
+    res.json(challengers)
   } catch(err) {
     console.error('Error Fetching leaderboard data', err);
   }
