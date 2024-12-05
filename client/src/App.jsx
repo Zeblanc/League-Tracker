@@ -10,6 +10,12 @@ import './App.css';
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -48,6 +54,10 @@ function App() {
     setUser(null);
   };
 
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
+
   const handleRiotAccountLink = async (gameName, tagLine) => {
     try {
       const response = await fetch('http://localhost:8080/api/account/link', {
@@ -76,7 +86,7 @@ function App() {
   return (
     <Router>
       <div>
-        <Banner isLoggedIn={!!token} />
+        <Banner isLoggedIn={!!token} theme={theme} onToggleTheme={toggleTheme} />
         {!token ? (
           <div className="auth-container">
             <div className="auth-forms">

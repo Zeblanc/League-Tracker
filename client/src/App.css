@@ -1,15 +1,77 @@
+/* Dark mode variables */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --component-bg: #f5f5f5;
+  --border-color: #ddd;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --nav-bg: #1a1a1a;
+  --nav-text: #ffffff;
+  --link-bg: #4a90e2;
+  --link-hover: #357abd;
+}
+
+[data-theme='dark'] {
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --component-bg: #2d2d2d;
+  --border-color: #404040;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --nav-bg: #2d2d2d;
+  --nav-text: #ffffff;
+  --link-bg: #357abd;
+  --link-hover: #4a90e2;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+  margin: 0;
+  padding: 0;
+}
 
 .banner {
-  background-color: #1a1a1a;
-  color: white;
+  background-color: var(--nav-bg);
+  color: var(--nav-text);
   padding: 1rem;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.banner h1 {
-  margin: 0;
+.list-group {
+  display: flex;
+  gap: 10px;
 }
 
+.list-group-item {
+  background-color: var(--link-bg);
+  color: white;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: var(--link-hover);
+}
+
+.theme-toggle {
+  background: transparent;
+  border: 2px solid var(--nav-text);
+  color: var(--nav-text);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.theme-toggle:hover {
+  background: var(--nav-text);
+  color: var(--nav-bg);
+}
 
 .auth-container {
   max-width: 800px;
@@ -24,34 +86,35 @@
   margin-top: 40px;
 }
 
-
 .auth-form {
   flex: 1;
-  background: #f5f5f5;
+  background: var(--component-bg);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .auth-form h2 {
   margin-top: 0;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
 }
 
 .auth-form input {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 16px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .auth-form button {
   width: 100%;
   padding: 12px;
-  background-color: #4a90e2;
+  background-color: var(--link-bg);
   color: white;
   border: none;
   border-radius: 4px;
@@ -61,22 +124,22 @@
 }
 
 .auth-form button:hover {
-  background-color: #357abd;
+  background-color: var(--link-hover);
 }
-
 
 .user-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background-color: #f5f5f5;
+  background-color: var(--component-bg);
   margin-bottom: 20px;
 }
 
 .user-info p {
   margin: 0;
   font-size: 16px;
+  color: var(--text-color);
 }
 
 .user-info button {
@@ -93,25 +156,24 @@
   background-color: #c82333;
 }
 
-
 .riot-account-container {
   max-width: 500px;
   margin: 40px auto;
   padding: 20px;
-  background: #f5f5f5;
+  background: var(--component-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .riot-account-container h2 {
   margin-top: 0;
-  color: #333;
+  color: var(--text-color);
   text-align: center;
 }
 
 .riot-account-container p {
   text-align: center;
-  color: #666;
+  color: var(--text-color);
   margin-bottom: 20px;
 }
 
@@ -122,15 +184,17 @@
 .form-group input {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 16px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .riot-account-container button {
   width: 100%;
   padding: 12px;
-  background-color: #4a90e2;
+  background-color: var(--link-bg);
   color: white;
   border: none;
   border-radius: 4px;
@@ -140,9 +204,8 @@
 }
 
 .riot-account-container button:hover {
-  background-color: #357abd;
+  background-color: var(--link-hover);
 }
-
 
 .match-history {
   max-width: 800px;
@@ -151,23 +214,22 @@
 }
 
 .match-stats {
-  background: white;
+  background: var(--component-bg);
   margin-bottom: 20px;
   padding: 15px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .match-stats h3 {
   margin-top: 0;
-  color: #333;
+  color: var(--text-color);
 }
 
 .match-stats p {
   margin: 5px 0;
-  color: #666;
+  color: var(--text-color);
 }
-
 
 @media (max-width: 768px) {
   .auth-forms {

@@ -21,9 +21,107 @@ const baseUrl = "https://americas.api.riotgames.com";
 const regionUrl = "https://na1.api.riotgames.com";
 
 // Leaderboard endpoint
+// app.get('/api/leaderboard', async (req, res) => {
+//   try {
+//     console.log('Fetching challenger league data...');
+//     const response = await axios.get(
+//       `${regionUrl}/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`,
+//       {
+//         headers: {
+//           "X-Riot-Token": API_KEY,
+//           "Accept-Language": "en-US,en;q=0.9",
+//           "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
+//           "Origin": "https://developer.riotgames.com"
+//         }
+//       }
+//     );
+
+//     if (!response.data || !response.data.entries) {
+//       console.error('Invalid response format:', response.data);
+//       return res.status(500).json({ error: 'Invalid response from Riot API' });
+//     }
+
+//     console.log('Received challenger data with entries:', response.data.entries.length);
+
+//     const topPlayers = response.data.entries
+//       .sort((a, b) => b.leaguePoints - a.leaguePoints)
+//       .slice(0, 100)
+//       .map((entry, index) => {
+//         console.log('Processing entry:', entry);
+//         return {
+//           rank: index + 1,
+//           summonerName: entry.summonerName,
+//           leaguePoints: entry.leaguePoints,
+//           wins: entry.wins,
+//           losses: entry.losses,
+//           winRate: ((entry.wins / (entry.wins + entry.losses)) * 100).toFixed(1)
+//         };
+//       });
+
+//     console.log('Sending processed data:', topPlayers.slice(0, 3)); // Log first 3 entries
+//     res.json(topPlayers);
+//   } catch (error) {
+//     console.error("Error fetching leaderboard:", {
+//       message: error.message,
+//       response: error.response?.data,
+//       status: error.response?.status
+//     });
+//     res.status(500).json({ 
+//       error: 'Error fetching leaderboard data',
+//       details: error.response?.data || error.message
+//     });
+//   }
+// });
+
+
+async function fetchPuuidWithSummonerId(summonerId) {
+  try {
+    const response = await axios.get(
+      `${regionUrl}/lol/summoner/v4/summoners/${summonerId}?api_key=${API_KEY}`
+    )
+
+    return response.data.puuid
+  } catch (err) {
+    console.error("could not fetch PUUID", err)
+    throw err
+  }
+}
+
+async function fetchGameNameAndTaglineWithPuuid(puuid) {
+  try {
+    const accountPuuid = await axios.get(
+      `${baseUrl}/riot/account/v1/accounts/by-puuid/${puuid}?api_key=${API_KEY}`
+    )
+
+    const result = {
+      gameName: accountPuuid.data.gameName,
+      tagLine: accountPuuid.data.tagLine
+    }
+
+    return result
+  } catch (err) {
+    console.error("Could not get Game Name and Tagline", err)
+    throw err
+  }
+}
+
+app.get('/api/getGameNameAndTagline/:summonerId', async (req, res) => {
+  const summonerId = req.params.summonerId;
+  try {
+    const summonerData = await fetchPuuidWithSummonerId(summonerId);
+    const accountName = await fetchGameNameAndTaglineWithPuuid(summonerData);
+    return res.json(accountName);
+  } catch (err) {
+    console.error("Could not get PUUID", err);
+    const statusCode = err.response?.status || 500;
+    return res.status(statusCode).json({ error: err.message || "Internal Server Error" });
+  }
+});
+
 app.get('/api/leaderboard', async (req, res) => {
   try {
-    console.log('Fetching challenger league data...');
+    console.log('Fetching Leaderboard Data...');
+
     const response = await axios.get(
       `${regionUrl}/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`,
       {
@@ -36,42 +134,44 @@ app.get('/api/leaderboard', async (req, res) => {
       }
     );
 
-    if (!response.data || !response.data.entries) {
-      console.error('Invalid response format:', response.data);
-      return res.status(500).json({ error: 'Invalid response from Riot API' });
-    }
+    const challengers = response.data.entries
+    .sort((a, b) => b.leaguePoints - a.leaguePoints)
+    .slice(0, 100);
 
-    console.log('Received challenger data with entries:', response.data.entries.length);
+    const enrichedChallengers = await Promise.all(
+      challengers.map(async (entry, index) => {
+        const summonerData = await fetchPuuidWithSummonerId(entry.summonerId)
+        const accountData = await fetchGameNameAndTaglineWithPuuid(summonerData)
 
-    const topPlayers = response.data.entries
-      .sort((a, b) => b.leaguePoints - a.leaguePoints)
-      .slice(0, 100)
-      .map((entry, index) => {
-        console.log('Processing entry:', entry);
         return {
           rank: index + 1,
-          summonerName: entry.summonerName,
-          leaguePoints: entry.leaguePoints,
+          summonerId: entry.summonerId,
+          gameName: accountData.gameName,
+          tagLine: accountData.tagLine,
+          lp: entry.leaguePoints,
           wins: entry.wins,
           losses: entry.losses,
-          winRate: ((entry.wins / (entry.wins + entry.losses)) * 100).toFixed(1)
-        };
-      });
+          winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
+        }
+      })
+    )
+  //   .map((entry, index) => {
+  //     console.log("Entry: ", entry);
+  //     return {
+  //       rank: index + 1,
+  //       summonerId: entry.summonerId,
+  //       lp: entry.leaguePoints,
+  //       wins: entry.wins,
+  //       losses: entry.losses,
+  //       winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
+  //     }
+  //   })
 
-    console.log('Sending processed data:', topPlayers.slice(0, 3)); // Log first 3 entries
-    res.json(topPlayers);
-  } catch (error) {
-    console.error("Error fetching leaderboard:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
-    res.status(500).json({ 
-      error: 'Error fetching leaderboard data',
-      details: error.response?.data || error.message
-    });
+  //   res.json(challengers)
+  } catch(err) {
+    console.error('Error Fetching leaderboard data', err);
   }
-});
+})
 
 
 app.post('/api/register', [
