@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import SummonerSearch from '../components/SummonerSearch';
 
 function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -27,6 +27,12 @@ function Leaderboard() {
 
     fetchLeaderboard();
   }, []);
+
+  const handleSummonerClick = (summonerId) => {
+    if (window.searchSummoner) {
+      window.searchSummoner(summonerId);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,6 +67,9 @@ function Leaderboard() {
   return (
     <div className="container mt-4">
       <h2 className="text-center mb-4">Challenger Leaderboard</h2>
+      
+      <SummonerSearch />
+      
       <div className="table-responsive">
         <table className="table table-hover">
           <thead className="table-dark">
@@ -75,9 +84,14 @@ function Leaderboard() {
           </thead>
           <tbody>
             {leaderboardData.map((player) => (
-              <tr key={player.summonerName}>
+              <tr key={player.summonerId || player.rank}>
                 <td>{player.rank}</td>
-                <td>{player.summonerId}</td>
+                <td 
+                  style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }} 
+                  onClick={() => handleSummonerClick(player.summonerId)}
+                >
+                  {player.summonerId}
+                </td>
                 <td>{player.lp}</td>
                 <td>{player.wins}</td>
                 <td>{player.losses}</td>

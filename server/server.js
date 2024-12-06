@@ -102,23 +102,6 @@ app.get('/api/leaderboard', async (req, res) => {
     });
 
     res.json(challengers)
-    // const enrichedChallengers = await Promise.all(
-    //   challengers.map(async (entry, index) => {
-    //     const summonerData = await fetchPuuidWithSummonerId(entry.summonerId)
-    //     const accountData = await fetchGameNameAndTaglineWithPuuid(summonerData)
-
-    //     return {
-    //       rank: index + 1,
-    //       summonerId: entry.summonerId,
-    //       gameName: accountData.gameName,
-    //       tagLine: accountData.tagLine,
-    //       lp: entry.leaguePoints,
-    //       wins: entry.wins,
-    //       losses: entry.losses,
-    //       winrate: (entry.wins / (entry.wins + entry.losses) * 100).toFixed(0)
-    //     }
-    //   })
-    // )
     
   } catch(err) {
     console.error('Error Fetching leaderboard data', err);
