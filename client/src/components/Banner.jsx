@@ -8,6 +8,7 @@ function Banner({ theme, onToggleTheme }) {
         <Link to="/" className="list-group-item list-group-item-action list-group-item-primary">Home</Link>
         <Link to="/leaderboard" className="list-group-item list-group-item-action list-group-item-primary">Leaderboard</Link>
       </div>
+      <h1 className="banner-title">League-Tracker</h1>
       <button 
         className="theme-toggle" 
         onClick={onToggleTheme}

@@ -38,6 +38,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+}
+
+.banner-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: var(--nav-text);
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .list-group {
